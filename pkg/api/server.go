@@ -2,8 +2,11 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	_ "github.com/nikhilnarayanan623/video-streaming-clean-arch/docs"
 	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/api/handler/interfaces"
 	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/config"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type Server struct {
@@ -11,15 +14,17 @@ type Server struct {
 	port   string
 }
 
-func NewServerHTTP(cfg *config.Config, videHandler interfaces.VideHandler) *Server {
+func NewServerHTTP(cfg *config.Config, videoHandler interfaces.VideHandler) *Server {
 
 	engine := gin.Default()
 
+	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+
 	video := engine.Group("/video")
 	{
-		video.POST("/", videHandler.Upload)
-		video.GET("/all", videHandler.FindAll)
-		video.GET("/play", videHandler.Play)
+		video.POST("/", videoHandler.Upload)
+		video.GET("/all", videoHandler.FindAll)
+		video.GET("/stream", videoHandler.Play)
 	}
 
 	return &Server{

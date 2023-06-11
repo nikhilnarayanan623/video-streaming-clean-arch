@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/api/handler/interfaces"
 	usecase "github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/usecase/interfaces"
+	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/utils"
 	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/utils/request"
 	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/utils/response"
 )
@@ -21,9 +22,17 @@ func NewVideoHandler(usecase usecase.VideUseCase) interfaces.VideHandler {
 	}
 }
 
-// Upload Video
+// Upload godoc
+// @summary api for upload videos to server
+// @tags Video
+// @id Upload
+// @Param     video   formData     file   true   "Video file to upload"
+// @Param     name   formData     string   true   "Video Name"
+// @Router /video [post]
+// @Success 201 {object} response.Response{} "successfully video uploaded"
+// @Failure 400 {object} response.Response{}  "failed get inputs"
+// @Failure 500 {object} response.Response{}  "failed to save video"
 func (c *videHandler) Upload(ctx *gin.Context) {
-
 	// get video file from request
 	fileHeader, err := ctx.FormFile("video")
 	if err != nil {
@@ -55,6 +64,20 @@ func (c *videHandler) Upload(ctx *gin.Context) {
 }
 func (c *videHandler) FindAll(ctx *gin.Context) {
 
+	pagination := utils.GetPagination(ctx)
+
+	videos, err := c.usecase.FindAll(ctx, pagination)
+	if err != nil {
+		response.ErrorResponse(ctx, http.StatusInternalServerError, "failed to get all videos", err, nil)
+		return
+	}
+
+	if videos == nil {
+		response.SuccessResponse(ctx, http.StatusOK, "there is no videos to show")
+		return
+	}
+
+	response.SuccessResponse(ctx, http.StatusOK, "successfully found all videos", videos)
 }
 func (c *videHandler) Play(ctx *gin.Context) {
 
