@@ -1,0 +1,44 @@
+definitions:
+  response.Response:
+    properties:
+      data: {}
+      error: {}
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+info:
+  contact: {}
+paths:
+  /video:
+    post:
+      operationId: Upload
+      parameters:
+      - description: Video file to upload
+        in: formData
+        name: video
+        required: true
+        type: file
+      - description: Video Name
+        in: formData
+        name: name
+        required: true
+        type: string
+      responses:
+        "201":
+          description: successfully video uploaded
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: failed get inputs
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: failed to save video
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: api for upload videos to server
+      tags:
+      - Video
+swagger: "2.0"
