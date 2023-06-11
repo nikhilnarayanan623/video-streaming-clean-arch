@@ -8,6 +8,6 @@ import (
 )
 
 type VideUseCase interface {
-	Save(ctx context.Context, video domain.Video) (videoID string, err error)
+	Save(ctx context.Context, uploadReq request.UploadVideo) (videoID string, err error)
 	FindAll(ctx context.Context, pagination request.Pagination) ([]domain.Video, error)
 }

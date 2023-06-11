@@ -11,7 +11,7 @@ type Server struct {
 	port   string
 }
 
-func NewServerHTTP(cfg config.Config, videHandler interfaces.VideHandler) *Server {
+func NewServerHTTP(cfg *config.Config, videHandler interfaces.VideHandler) *Server {
 
 	engine := gin.Default()
 
