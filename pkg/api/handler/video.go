@@ -28,27 +28,31 @@ func NewVideoHandler(usecase usecase.VideUseCase) interfaces.VideHandler {
 // @id Upload
 // @Param     video   formData     file   true   "Video file to upload"
 // @Param     name   formData     string   true   "Video Name"
+// @Param     description   formData     string   true   "Video Description"
 // @Router /video [post]
 // @Success 201 {object} response.Response{} "successfully video uploaded"
 // @Failure 400 {object} response.Response{}  "failed get inputs"
 // @Failure 500 {object} response.Response{}  "failed to save video"
 func (c *videHandler) Upload(ctx *gin.Context) {
+	// user given video name
+	videoName := ctx.Request.PostFormValue("name")
+	videoDescription := ctx.Request.PostFormValue("description")
+	if videoName == "" || videoDescription == "" {
+		err := errors.New("failed get inputs 'name' or 'description' ")
+		response.ErrorResponse(ctx, http.StatusBadRequest, "failed to get inputs", err, nil)
+		return
+	}
 	// get video file from request
 	fileHeader, err := ctx.FormFile("video")
 	if err != nil {
 		response.ErrorResponse(ctx, http.StatusBadRequest, "failed to get video from request", err, nil)
 		return
 	}
-	// user given video name
-	videoName := ctx.Request.PostFormValue("name")
-	if videoName == "" {
-		response.ErrorResponse(ctx, http.StatusBadRequest, "failed to get vide name", errors.New("name not provided"), nil)
-		return
-	}
 
 	uploadVideo := request.UploadVideo{
-		Name:       videoName,
-		FileHeader: fileHeader,
+		Name:        videoName,
+		FileHeader:  fileHeader,
+		Description: videoDescription,
 	}
 
 	videoID, err := c.usecase.Save(ctx, uploadVideo)
@@ -62,6 +66,16 @@ func (c *videHandler) Upload(ctx *gin.Context) {
 		"video_id": videoID,
 	})
 }
+
+// FindAll godoc
+// @summary api for find all videos on server
+// @tags Video
+// @id FindAll
+// @Param     page_number   query     string   false   "Page Number"
+// @Param     count   query     string   false   "Count"
+// @Router /video/all [get]
+// @Success 201 {object} response.Response{} "successfully found all videos"
+// @Failure 500 {object} response.Response{}  "failed to get all videos"
 func (c *videHandler) FindAll(ctx *gin.Context) {
 
 	pagination := utils.GetPagination(ctx)
@@ -79,6 +93,6 @@ func (c *videHandler) FindAll(ctx *gin.Context) {
 
 	response.SuccessResponse(ctx, http.StatusOK, "successfully found all videos", videos)
 }
-func (c *videHandler) Play(ctx *gin.Context) {
+func (c *videHandler) Stream(ctx *gin.Context) {
 
 }

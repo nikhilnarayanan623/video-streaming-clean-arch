@@ -60,6 +60,43 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/video/all": {
+            "get": {
+                "tags": [
+                    "Video"
+                ],
+                "summary": "api for find all videos on server",
+                "operationId": "FindAll",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Page Number",
+                        "name": "page_number",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Count",
+                        "name": "count",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "successfully found all videos",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get all videos",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {

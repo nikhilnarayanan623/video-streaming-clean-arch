@@ -24,7 +24,7 @@ func NewServerHTTP(cfg *config.Config, videoHandler interfaces.VideHandler) *Ser
 	{
 		video.POST("/", videoHandler.Upload)
 		video.GET("/all", videoHandler.FindAll)
-		video.GET("/stream", videoHandler.Play)
+		video.GET("/stream", videoHandler.Stream)
 	}
 
 	return &Server{

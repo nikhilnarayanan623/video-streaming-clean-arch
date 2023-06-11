@@ -12,6 +12,7 @@ import (
 	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/usecase/interfaces"
 	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/utils"
 	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/utils/request"
+	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/utils/response"
 )
 
 type videoUseCase struct {
@@ -19,8 +20,7 @@ type videoUseCase struct {
 }
 
 const (
-	videosDir   = "./videos"
-	playlistDir = "./playlists"
+	videosDir = "./videos"
 )
 
 func NewVideoUseCase(repo repo.VideoRepository) interfaces.VideUseCase {
@@ -37,18 +37,18 @@ func (c *videoUseCase) Save(ctx context.Context, uploadReq request.UploadVideo) 
 		return "", fmt.Errorf("failed open file \nerror:%w", err)
 	}
 
-	videID := utils.NewVideUniqueID()
+	videoID := utils.NewVideUniqueID()
 	//create a new file with unique id
-	destFile, err := c.createNewFile(videID)
+	destFile, filePath, err := c.createNewVideoFile(videoID)
 	if err != nil {
 		return "", fmt.Errorf("failed to create new file \nerror:%w", err)
 	}
 
 	// run copy function and database save function on two go routine
-	// two functions are independents
+	// two functions are independent
 	errChan := make(chan error, 2)
 
-	// copy file from uploaded to new created file
+	// copy file from uploaded to new created file on one go routine
 	go func(errChan chan error) {
 		err = c.copyFiles(destFile, file)
 		if err != nil {
@@ -57,11 +57,13 @@ func (c *videoUseCase) Save(ctx context.Context, uploadReq request.UploadVideo) 
 		errChan <- nil
 	}(errChan)
 
-	// save file details on database
+	// save file details on database on another routine
 	go func(errChan chan error) {
 		err = c.repo.Save(ctx, domain.Video{
-			ID:   videID,
-			Name: uploadReq.Name,
+			ID:          videoID,
+			Name:        uploadReq.Name,
+			Url:         filePath,
+			Description: uploadReq.Description,
 		})
 		if err != nil {
 			errChan <- fmt.Errorf("failed to save file details on database \nerror:%w", err)
@@ -77,33 +79,34 @@ func (c *videoUseCase) Save(ctx context.Context, uploadReq request.UploadVideo) 
 		}
 	}
 
-	return videID, nil
+	return videoID, nil
 }
-func (c *videoUseCase) FindAll(ctx context.Context, pagination request.Pagination) ([]domain.Video, error) {
+func (c *videoUseCase) FindAll(ctx context.Context, pagination request.Pagination) (videos []response.VideoDetails, err error) {
 
 	video, err := c.repo.FindAll(ctx, pagination)
 
 	return video, err
 }
 
-func (c *videoUseCase) createNewFile(fileID string) (*os.File, error) {
+func (c *videoUseCase) createNewVideoFile(fileID string) (file *os.File, filePath string, err error) {
 
-	err := os.MkdirAll(videosDir, 0700)
+	err = os.MkdirAll(videosDir, 0700)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	fileName := videosDir + "/" + fileID + ".mp4"
+	filePath = videosDir + "/" + fileID + ".mp4"
 
-	file, err := os.Create(fileName)
+	file, err = os.Create(filePath)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return file, nil
+
+	return file, filePath, nil
 }
 
 func (c *videoUseCase) copyFiles(dest *os.File, src multipart.File) error {
-	
+
 	_, err := io.Copy(dest, src)
 	return err
 }
