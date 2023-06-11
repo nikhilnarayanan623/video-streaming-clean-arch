@@ -7,6 +7,7 @@ import (
 	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/domain"
 	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/repository/interfaces"
 	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/utils/request"
+	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/utils/response"
 	"gorm.io/gorm"
 )
 
@@ -23,18 +24,18 @@ func NewVideoRepository(db *gorm.DB) interfaces.VideoRepository {
 func (c *videDatabase) Save(ctx context.Context, video domain.Video) error {
 
 	uploadedAt := time.Now()
-	query := `INSERT INTO videos (id, name, uploaded_at) VALUES ($1, $2, $3)`
-	err := c.db.Exec(query, video.ID, video.Name, uploadedAt).Error
+	query := `INSERT INTO videos (id, name, url, description, uploaded_at) VALUES ($1, $2, $3, $4, $5)`
+	err := c.db.Exec(query, video.ID, video.Name, video.Url, video.Description, uploadedAt).Error
 
 	return err
 }
 
-func (c *videDatabase) FindAll(ctx context.Context, pagination request.Pagination) (videos []domain.Video, err error) {
+func (c *videDatabase) FindAll(ctx context.Context, pagination request.Pagination) (videos []response.VideoDetails, err error) {
 
 	limit := pagination.Count
 	offset := (pagination.PageNumber - 1) * limit
 
-	query := `SELECT id, name, uploaded_at FROM videos LIMIT $1 OFFSET $2`
+	query := `SELECT id, name, description, uploaded_at FROM videos LIMIT $1 OFFSET $2`
 	err = c.db.Raw(query, limit, offset).Scan(&videos).Error
 
 	return

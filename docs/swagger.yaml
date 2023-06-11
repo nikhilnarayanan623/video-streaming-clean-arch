@@ -41,4 +41,28 @@ paths:
       summary: api for upload videos to server
       tags:
       - Video
+  /video/all:
+    get:
+      operationId: FindAll
+      parameters:
+      - description: Page Number
+        in: query
+        name: page_number
+        type: string
+      - description: Count
+        in: query
+        name: count
+        type: string
+      responses:
+        "201":
+          description: successfully found all videos
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: failed to get all videos
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: api for find all videos on server
+      tags:
+      - Video
 swagger: "2.0"
