@@ -25,6 +25,11 @@ paths:
         name: name
         required: true
         type: string
+      - description: Video Description
+        in: formData
+        name: description
+        required: true
+        type: string
       responses:
         "201":
           description: successfully video uploaded
@@ -63,6 +68,23 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
       summary: api for find all videos on server
+      tags:
+      - Video
+  /video/stream/{video_id}:
+    get:
+      operationId: Stream
+      parameters:
+      - description: video ID
+        in: path
+        name: video_id
+        required: true
+        type: string
+      responses:
+        "500":
+          description: failed to stream video
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: api for stream video through a single tcp connection
       tags:
       - Video
 swagger: "2.0"

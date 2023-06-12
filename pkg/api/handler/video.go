@@ -1,22 +1,25 @@
 package handler
 
 import (
+	"context"
 	"errors"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/api/handler/interfaces"
-	usecase "github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/usecase/interfaces"
+	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/usecase"
+	usecaseInterface "github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/usecase/interfaces"
 	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/utils"
 	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/utils/request"
 	"github.com/nikhilnarayanan623/video-streaming-clean-arch/pkg/utils/response"
 )
 
 type videHandler struct {
-	usecase usecase.VideUseCase
+	usecase usecaseInterface.VideUseCase
 }
 
-func NewVideoHandler(usecase usecase.VideUseCase) interfaces.VideHandler {
+func NewVideoHandler(usecase usecaseInterface.VideUseCase) interfaces.VideHandler {
 	return &videHandler{
 		usecase: usecase,
 	}
@@ -93,6 +96,64 @@ func (c *videHandler) FindAll(ctx *gin.Context) {
 
 	response.SuccessResponse(ctx, http.StatusOK, "successfully found all videos", videos)
 }
+
+// FindAll godoc
+// @summary api for stream video through a single tcp connection
+// @tags Video
+// @id Stream
+// @Param     video_id   path     string   true   "video ID"
+// @Router /video/stream/{video_id} [get]
+// @Failure 500 {object} response.Response{}  "failed to stream video"
 func (c *videHandler) Stream(ctx *gin.Context) {
+
+	videoID := ctx.Param("video_id")
+
+	video, err := c.usecase.FindByID(ctx, videoID)
+	if err != nil {
+		statusCode := http.StatusInternalServerError
+		if err == usecase.ErrInvalidVideoID {
+			statusCode = http.StatusBadRequest
+		}
+		response.ErrorResponse(ctx, statusCode, "failed to get video", err, nil)
+		return
+	}
+
+	ctx.Header("Content-Type", "video/mp4")
+	ctx.Header("Transfer-Encoding", "chunked")
+	// ctx.Header("Content-Length", strconv.FormatInt(fileSize, 10))
+
+	fCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	bufferChan := make(chan []byte)
+	sendNext := make(chan bool)
+	errChan := make(chan error)
+
+	// call the usecase in other go routine to read data concurrently
+	go c.usecase.Stream(fCtx, video.Url, bufferChan, sendNext, errChan)
+
+	for {
+		select {
+		// if data came then write it on writer
+		case data := <-bufferChan:
+			_, err := ctx.Writer.Write(data)
+			if err != nil {
+				return
+			}
+			ctx.Writer.Flush()
+			// sendNext to true for read the next part
+			sendNext <- true
+
+			// catch error through error channel
+		case err = <-errChan:
+			// if error is not the end of video then response error and break
+			if err != io.EOF {
+				response.ErrorResponse(ctx, http.StatusInternalServerError, "failed to stream video", err, nil)
+			}
+			return
+		case <-ctx.Done():
+			return
+		}
+	}
 
 }
