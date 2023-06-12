@@ -37,6 +37,13 @@ const docTemplate = `{
                         "name": "name",
                         "in": "formData",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Video Description",
+                        "name": "description",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -91,6 +98,32 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "failed to get all videos",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/video/stream/{video_id}": {
+            "get": {
+                "tags": [
+                    "Video"
+                ],
+                "summary": "api for stream video through a single tcp connection",
+                "operationId": "Stream",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "video ID",
+                        "name": "video_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "500": {
+                        "description": "failed to stream video",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }

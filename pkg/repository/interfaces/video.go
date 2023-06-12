@@ -10,5 +10,6 @@ import (
 
 type VideoRepository interface {
 	Save(ctx context.Context, video domain.Video) error
+	FindByID(ctx context.Context,id string)(domain.Video,error)
 	FindAll(ctx context.Context, pagination request.Pagination) (videos []response.VideoDetails, err error)
 }

@@ -30,6 +30,14 @@ func (c *videDatabase) Save(ctx context.Context, video domain.Video) error {
 	return err
 }
 
+func (c *videDatabase) FindByID(ctx context.Context, id string) (video domain.Video, err error) {
+
+	query := `SELECT id, name, url, uploaded_at FROM videos WHERE id = $1`
+	err = c.db.Raw(query, id).Scan(&video).Error
+
+	return
+}
+
 func (c *videDatabase) FindAll(ctx context.Context, pagination request.Pagination) (videos []response.VideoDetails, err error) {
 
 	limit := pagination.Count
